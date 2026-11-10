@@ -41,6 +41,12 @@ In [`media/`](media/):
 If you want to reuse them, **adapt them to your installation**:
 
 - **Credentials.** Every password, token, key and password hash is replaced by `<REDACTED>`: put your own values.
+- **SOPS-encrypted secrets.** The two secrets of the base, `lab-base/secret-harbor.yaml` (the HCL Harbor pull secret)
+  and `lab-base/secrets.yaml` (wpsadmin), are encrypted with [SOPS](https://github.com/getsops/sops) and an
+  [age](https://github.com/FiloSottile/age) key, as shown in the webinar, and they too only hold `<REDACTED>`. You
+  cannot decrypt them (the key is ours): create your own key with `age-keygen`, put its public key in `.sops.yaml`,
+  write your values in plain YAML and encrypt the files with `sops -e -i <file>`. Or apply them as plain YAML: both
+  ways give the same Secrets.
 - **Names.** Host names (`*.apps.promox.europesip-lab.com`), namespaces (`dx-demo`, `dx-shared`), storage classes,
   the LDAP base DN and the demo users belong to our lab cluster.
 - **Not included:** `setup-postgres-dx.sql` (the PostgreSQL table script is HCL early-release material: ask HCL for
@@ -56,7 +62,7 @@ generates the same set of files, already filled in for your environment.
 
 | Folder | Content |
 |---|---|
-| `lab-base/` | Namespaces, the base DX values (`custom-values.yaml`), the Ingress and the DX secrets |
+| `lab-base/` | Namespaces, the base DX values (`custom-values.yaml`), the Ingress and the DX secrets, encrypted with SOPS (`secret-harbor.yaml`, `secrets.yaml`; rules in `/.sops.yaml`) |
 | `lab-ldap/` | OpenLDAP values, the demo users (`demo-users.ldif`), the bind secret, the **basic** LDAP layer (`custom-values.ldap-basic.yaml`) and the **complete** one with configuration overrides (`custom-values.ldap.yaml`: sign in by e-mail, preferred language, LDAPS with the corporate CAs), the XMLAccess request for the admin role and an **example** for a corporate Active Directory (`example-active-directory.yaml`, not applied) |
 | `lab-bbdd/` | The PostgreSQL cluster (CloudNativePG, SSL only), its secrets and the Web Engine database properties (`dx_dbdomain.properties`, JDBC over SSL with `sslmode=verify-full`) |
 | `lab-iq/` | LiteLLM and HCL DX IQ values |

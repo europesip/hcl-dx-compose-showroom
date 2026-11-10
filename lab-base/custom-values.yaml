@@ -5,7 +5,7 @@
 images:
   repository: "hclcr.io"
   imagePullSecrets:
-    - name: regcred          # in lab-base/secrets.yaml
+    - name: regcred          # in lab-base/secret-harbor.yaml
 
 # Volumes: the two StorageClasses of the requirements (RWO and RWX)
 volumes:

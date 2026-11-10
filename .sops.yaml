@@ -1,0 +1,7 @@
+# SOPS rules: which files are encrypted, which fields, and for which key.
+# Only data and stringData are encrypted: names, namespaces and types stay readable in Git.
+# Decrypting needs the private age key (~/.config/sops/age/keys.txt). To encrypt a file again: sops -e -i <file>
+creation_rules:
+  - path_regex: lab-base/(secret-harbor|secrets)\.yaml$
+    encrypted_regex: '^(data|stringData)$'
+    age: age132f3u3v2kggz6aurm6wmhlrtpxllcwr6yxxk4m9nk90zx5j7aflqcxgf3x

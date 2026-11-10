@@ -71,6 +71,9 @@ retry helm pull oci://hclcr.io/dx-compose/hcl-dx-search --version 2.37.0 -d char
 
 # 1-1 · Secrets
 step_3() {
+cat lab-base/secret-harbor.yaml
+sops -d lab-base/secret-harbor.yaml | kubectl apply -f -
+grep -q '^sops:' lab-base/secrets.yaml && sops -d -i lab-base/secrets.yaml   # decrypted once, then it stays in clear text
 kubectl apply -f lab-base/secrets.yaml
 [ -f lab-base/dx-tls.crt ] || openssl req -x509 -newkey rsa:2048 -nodes -sha256 -days 365 -keyout lab-base/dx-tls.key -out lab-base/dx-tls.crt \
   -subj "/CN=dx-demo.apps.promox.europesip-lab.com" -addext "subjectAltName=DNS:dx-demo.apps.promox.europesip-lab.com"

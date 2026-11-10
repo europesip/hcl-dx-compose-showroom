@@ -189,14 +189,27 @@ helm pull oci://hclcr.io/dx-compose/hcl-dx-search --version 2.37.0 -d charts
 
 #### 1-1 · Secrets
 
-Pull secret and wpsadmin (lab-base/secrets.yaml) + a self-signed TLS certificate for HAProxy. There are two usual ways to create Kubernetes objects such as these secrets: imperative, with commands like kubectl create secret, and declarative, describing them in YAML files applied with kubectl apply. GitOps works with the declarative one, so it is the one this webinar follows (the TLS secret is built from the certificate files).
+Pull secret (lab-base/secret-harbor.yaml) and wpsadmin (lab-base/secrets.yaml) + a self-signed TLS certificate for HAProxy. There are two usual ways to create Kubernetes objects such as these secrets: imperative, with commands like kubectl create secret, and declarative, describing them in YAML files applied with kubectl apply. GitOps works with the declarative one, so it is the one this webinar follows (the TLS secret is built from the certificate files).
 
 ```bash
+# The two secrets of the base are in Git encrypted with SOPS: names readable, values ENC[AES256_GCM,...]
+cat lab-base/secret-harbor.yaml
+# Pull secret: decrypted on the fly and applied; the clear value never touches the disk
+sops -d lab-base/secret-harbor.yaml | kubectl apply -f -
+# wpsadmin: decrypted in place, so it stays in clear text for the rest of the labs, then applied
+sops -d -i lab-base/secrets.yaml
 kubectl apply -f lab-base/secrets.yaml
 [ -f lab-base/dx-tls.crt ] || openssl req -x509 -newkey rsa:2048 -nodes -sha256 -days 365 -keyout lab-base/dx-tls.key -out lab-base/dx-tls.crt \
   -subj "/CN=dx-demo.apps.promox.europesip-lab.com" -addext "subjectAltName=DNS:dx-demo.apps.promox.europesip-lab.com"
 kubectl -n dx-demo create secret tls dx-tls-cert --cert=lab-base/dx-tls.crt --key=lab-base/dx-tls.key --dry-run=client -o yaml | kubectl apply -f -
 ```
+
+> 🔐 **SOPS in this step.** Both files are encrypted with [SOPS](https://github.com/getsops/sops) and an
+> [age](https://github.com/FiloSottile/age) key, as they would be in a Git repository: `.sops.yaml` says which files and
+> fields are encrypted, and for which public key. You need `sops`, `age` and the private key in
+> `~/.config/sops/age/keys.txt`. Two ways to use them: `sops -d file | kubectl apply -f -` decrypts on the fly (the pull
+> secret), and `sops -d -i file` decrypts the file in place (wpsadmin), which then must **not** be pushed to Git again
+> (`sops -e -i file` encrypts it back). The rest of the labs use plain YAML files.
 
 #### 1-2 · Install DX Compose (15-25 min the first time)
 
