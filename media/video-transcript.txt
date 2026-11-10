@@ -256,13 +256,13 @@ Before the summary, a look back at the labs, with the run time of each one: the 
 And that is it. In one session, we deployed HCL DX Compose, connected it to LDAP, moved its data to PostgreSQL, added the AI assistant, and enabled search, one iteration at a time, each one a real capability. On this cluster, the whole installation takes about forty minutes, most of it waiting for the images and for the data transfer, and the base DX alone, fifteen to twenty five. You can replay this video to review any step, and use the official HCL documentation for the details of each one. And if you need a hand, EUROPESIP can help with any HCL DX installation, from a first proof of concept to a tuned production platform.
 
 [47:16]
-Everything we used today is open source. The labs repository has the guides and scripts of every iteration. And the HCL DX Compose Installer is the wizard that generated the dx install folder of this session. One word of caution: this was a basic example installation. It is fully functional, but there are many more configuration and tuning options, and we always recommend professional services for sites with high load expectations. Let's have a quick look at both repositories.
+Everything we used today is open source. The showroom repository has the files, the slides and the video of this webinar. And the HCL DX Compose Installer generates those files, and a full proof of concept, for your own environment. One word of caution: this was a basic example installation. It is fully functional, but there are many more configuration and tuning options, and we always recommend professional services for sites with high load expectations. Let's have a quick look at both repositories.
 
-[47:47]
-This is the labs repository, on GitHub, under europesip. One folder per lab, from the base DX to search, each one with its guide and its scripts, so you can repeat every step by hand, at your own pace. And in the showroom lab folder, the exact files of this webinar, with the credentials redacted.
+[47:48]
+If you want to run this showroom on your own PC, everything is in this repository, on GitHub, under europesip: the exact files we used today, already prepared, with the credentials redacted, the presentation, and the video of this session. Adapt the names and the credentials to your environment, or let the installer generate them for you.
 
-[48:07]
+[48:13]
 And this is the HCL DX Compose Installer. The code is public, under the MIT licence: anyone can check what it does with your credentials. The README explains what it does, with screenshots of each screen, how to run it with Docker or Helm, and its security model. Releases are tagged and published as a container image and a Helm chart.
 
-[48:35]
+[48:40]
 Thank you for watching. The labs and the HCL DX Compose Installer are at these two links. See you in the next session.
