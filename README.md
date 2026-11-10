@@ -30,7 +30,7 @@ In [`media/`](media/):
 
 - [`Deploy-HCL-DX-Compose-in-Minutes-slides.pdf`](media/Deploy-HCL-DX-Compose-in-Minutes-slides.pdf): the presentation.
 - [`video-transcript.txt`](media/video-transcript.txt): the narration of the video, scene by scene.
-- The video: see [`media/README.md`](media/README.md). It is published as an asset of a GitHub release of this
+- The full video and **one video per lab** (Lab 1 to Lab 5, to replay a single lab): see [`media/README.md`](media/README.md). It is published as an asset of a GitHub release of this
   repository, because it is larger than the file size GitHub accepts in a repository.
 
 ## Before you use these files
