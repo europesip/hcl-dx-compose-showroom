@@ -1,0 +1,92 @@
+# ------------------------------------------------------------------------------------------
+# EXAMPLE · advanced configuration for a corporate Microsoft Active Directory. NOT applied in this webinar.
+#
+# The native LDAP block of the chart (configuration.webEngine.ldap) generates filters for OpenLDAP (inetOrgPerson,
+# groupOfUniqueNames). An Active Directory needs its own, so the whole LDAP registry of Liberty is written as a
+# configuration override, and the native block is not used (ldap.type: none).
+# The connection data is not in this file: it comes from a secret as environment variables (customSecrets), and
+# Liberty replaces them in the XML (${AD_HOST}...). Documentation: DX Compose CF239 > Configuration changes using
+# overrides (Configuring LDAP).
+# ------------------------------------------------------------------------------------------
+configuration:
+  webEngine:
+    ldap:
+      type: "none"                     # the registry comes from the override below
+
+    # AD_HOST, AD_PORT (636), AD_BASE_DN, AD_BIND_USER, AD_BIND_PASSWORD
+    customSecrets:
+      ad-config: "dx-ad-bind"
+
+    # LDAPS: the root CA of the corporate directory, from internals-ca/ (as with our OpenLDAP)
+    customTruststoreSecrets:
+      corporate-cas: "dx-corporate-cas"
+
+    configOverrideFiles:
+      ad-registry.xml: |
+        <server description="DX Web Engine - corporate Microsoft Active Directory">
+          <!-- recursiveSearch="false" (the default, recommended): since CF239 DX resolves every parent group of a
+               user at login without a recursive search, and the Users and Groups UI shows the nested groups -->
+          <ldapRegistry id="ad" realm="CorporateADRealm"
+              host="${AD_HOST}" port="${AD_PORT}" sslEnabled="true"
+              baseDN="${AD_BASE_DN}"
+              bindDN="${AD_BIND_USER}" bindPassword="${AD_BIND_PASSWORD}"
+              ldapType="Microsoft Active Directory"
+              ignoreCase="true"
+              referral="ignore"
+              recursiveSearch="false"
+              bindAuthMechanism="simple"
+              returnToPrimaryServer="true"
+              searchPageSize="500"
+              searchTimeLimit="15s"
+              readTimeout="30s"
+              connectTimeout="10s">
+
+            <!-- Sign in with the Windows user (sAMAccountName) or the e-mail; groups through memberOf / member -->
+            <activedFilters
+                userFilter="(&amp;(|(sAMAccountName=%v)(mail=%v))(objectcategory=person))"
+                groupFilter="(&amp;(cn=%v)(objectcategory=group))"
+                userIdMap="user:sAMAccountName"
+                groupIdMap="*:cn"
+                groupMemberIdMap="memberOf:member"/>
+
+            <attributeConfiguration>
+              <attribute name="sAMAccountName" propertyName="uid" entityType="PersonAccount"/>
+              <attribute name="mail" propertyName="ibm-primaryEmail" entityType="PersonAccount"/>
+              <attribute name="title" propertyName="ibm-jobTitle" entityType="PersonAccount"/>
+            </attributeConfiguration>
+
+            <ldapEntityType name="PersonAccount">
+              <objectClass>person</objectClass>
+            </ldapEntityType>
+            <ldapEntityType name="Group">
+              <objectClass>group</objectClass>
+            </ldapEntityType>
+
+            <groupProperties>
+              <memberAttribute name="member" scope="direct" objectClass="group"/>
+              <membershipAttribute name="memberOf" scope="direct"/>
+            </groupProperties>
+
+            <loginProperty name="uid"/>
+            <loginProperty name="mail"/>
+          </ldapRegistry>
+
+          <!-- One realm with the basic registry of the chart (wpsadmin) and the Active Directory -->
+          <federatedRepository>
+            <primaryRealm name="FederatedRealm" allowOpIfRepoDown="true">
+              <participatingBaseEntry name="o=defaultWIMFileBasedRealm"/>
+              <participatingBaseEntry name="${AD_BASE_DN}"/>
+            </primaryRealm>
+          </federatedRepository>
+        </server>
+
+# The connection pool of the JVM for LDAP, plain and SSL (large directories, many users)
+environment:
+  pod:
+    webEngine:
+      - name: JVM_ARGS
+        value: >-
+          -Dcom.sun.jndi.ldap.connect.pool.protocol="plain ssl"
+          -Dcom.sun.jndi.ldap.connect.pool.timeout=180000
+          -Dcom.sun.jndi.ldap.connect.pool.maxsize=50
+          -Dcom.sun.jndi.ldap.connect.pool.prefsize=10

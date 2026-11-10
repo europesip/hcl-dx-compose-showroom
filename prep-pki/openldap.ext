@@ -1,0 +1,5 @@
+# openssl extensions of a server certificate signed by the EUROPESIP Corporate Directory Root CA
+basicConstraints = CA:FALSE
+keyUsage = digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName = DNS:openldap.dx-shared.svc.cluster.local, DNS:openldap.dx-shared.svc, DNS:openldap.dx-shared, DNS:openldap, DNS:openldap-0.openldap-headless.dx-shared.svc.cluster.local, DNS:localhost

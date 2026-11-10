@@ -1,0 +1,7 @@
+# Namespace of the HCL software (DX Compose, IQ, Search), created live in the demo (step 0-2).
+# Any Kubernetes (k3s, RKE2, EKS, AKS, GKE...). On OpenShift use namespace-dx.openshift.yaml instead.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dx-demo
+  labels: { lab: hcl-dx-compose }

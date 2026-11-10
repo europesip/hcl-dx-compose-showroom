@@ -1,0 +1,5 @@
+# openssl extensions of a server certificate signed by the EUROPESIP Corporate Database Root CA
+basicConstraints = CA:FALSE
+keyUsage = digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName = DNS:dx-pg-rw, DNS:dx-pg-rw.dx-shared, DNS:dx-pg-rw.dx-shared.svc, DNS:dx-pg-rw.dx-shared.svc.cluster.local, DNS:dx-pg-ro, DNS:dx-pg-ro.dx-shared, DNS:dx-pg-ro.dx-shared.svc, DNS:dx-pg-ro.dx-shared.svc.cluster.local, DNS:dx-pg-r, DNS:dx-pg-r.dx-shared, DNS:dx-pg-r.dx-shared.svc, DNS:dx-pg-r.dx-shared.svc.cluster.local

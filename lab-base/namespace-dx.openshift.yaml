@@ -1,0 +1,12 @@
+# Namespace of the HCL software on OpenShift: the annotations HCL requires, so that the restricted-v2 SCC
+# gives the pods the UID range and groups of the DX containers (UID/GID 1000-1001).
+# Documentation: DX Compose CF239 > Preparation > Mandatory tasks > Preparing the namespace.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dx-demo
+  labels: { lab: hcl-dx-compose }
+  annotations:
+    openshift.io/sa.scc.mcs: "s0:c24,c4"
+    openshift.io/sa.scc.supplemental-groups: "1001/10000"
+    openshift.io/sa.scc.uid-range: "1000/10000"

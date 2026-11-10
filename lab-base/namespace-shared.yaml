@@ -1,0 +1,7 @@
+# Namespace of the third-party tools (OpenLDAP, PostgreSQL, LiteLLM), created by prepare.sh.
+# It needs no annotations, on OpenShift either (they run with the range that restricted-v2 assigns).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dx-shared
+  labels: { lab: hcl-dx-compose }

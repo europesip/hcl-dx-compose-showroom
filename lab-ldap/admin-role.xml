@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Stage 2 · gives the Administrator role on the virtual resource PORTAL to the LDAP group dxadmins -->
+<request xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="PortalConfig_8.5.0.xsd" type="update">
+  <portal action="locate">
+    <virtual-resource action="update" name="PORTAL">
+      <access-control externalized="false" owner="undefined" private="false">
+        <role actionset="Administrator" update="set">
+          <mapping subjectid="cn=dxadmins,ou=groups,dc=dxdemo,dc=com" subjecttype="user_group" update="set"/>
+        </role>
+      </access-control>
+    </virtual-resource>
+  </portal>
+</request>

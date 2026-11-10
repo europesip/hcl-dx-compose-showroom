@@ -1,0 +1,16 @@
+HCL DX Compose showroom · "Deploy HCL DX Compose in Minutes" webinar (12 November 2026)
+Copyright 2026 EUROPESIP (https://www.europesip.com)
+
+The files, scripts, presentation and video of this showroom were originally developed by
+EUROPESIP and are released as open source under the Apache License, Version 2.0 (see LICENSE).
+
+You may use, modify and redistribute them, and contribute improvements. Under section 4(d) of the
+licence, any redistribution or derivative work must keep this NOTICE file and the attribution to
+EUROPESIP as the original author.
+
+Third-party material is NOT included in this repository and is NOT covered by this licence:
+- HCL Digital Experience (DX Compose), its Helm charts and container images are licensed products of
+  HCL Software; every user downloads them from hclcr.io with their own entitled account.
+- OpenLDAP, CloudNativePG, PostgreSQL, LiteLLM, OpenSearch, ingress-nginx, k3s and the other tools the
+  labs install keep their own licences.
+- HCL, Digital Experience and other product names are trademarks of their respective owners.

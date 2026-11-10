@@ -1,0 +1,63 @@
+# HCL DX Compose showroom · the files of the "Deploy HCL DX Compose in Minutes" webinar
+
+These are the files used in the **"Deploy HCL DX Compose in Minutes" webinar of 12 November 2026**: every values file,
+secret layout and command that appears on screen.
+
+They were **generated automatically by the [HCL DX Compose Installer](https://github.com/europesip/hcl-dx-compose-installer)**
+(webinar preset), the same tool that generates the material of a full proof of concept.
+
+**If you want to run this showroom on your own environment, everything is here**: the files, already prepared, the
+presentation and the video of the session.
+
+> **Frozen repository.** From 13 November 2026 this repository is frozen: it keeps the showroom exactly as it was
+> presented and receives no more changes. The [HCL DX Compose Installer](https://github.com/europesip/hcl-dx-compose-installer)
+> keeps evolving: use it for newer versions and other configurations.
+
+## The presentation and the video of the session
+
+In [`media/`](media/):
+
+- [`Deploy-HCL-DX-Compose-in-Minutes-slides.pdf`](media/Deploy-HCL-DX-Compose-in-Minutes-slides.pdf): the presentation.
+- [`video-transcript.txt`](media/video-transcript.txt): the narration of the video, scene by scene.
+- The video: see [`media/README.md`](media/README.md). It is published as an asset of a GitHub release of this
+  repository, because it is larger than the file size GitHub accepts in a repository.
+
+## Before you use these files
+
+> **You do not need these files to install DX Compose.** Everything shown in the webinar can be done by following the
+> official HCL documentation: <https://help.hcl-software.com/digital-experience/dx-compose/CF239/>.
+
+If you want to reuse them, **adapt them to your installation**:
+
+- **Credentials.** Every password, token, key and password hash is replaced by `<REDACTED>`: put your own values.
+- **Names.** Host names (`*.apps.promox.europesip-lab.com`), namespaces (`dx-demo`, `dx-shared`), storage classes,
+  the LDAP base DN and the demo users belong to our lab cluster.
+- **Not included:** `setup-postgres-dx.sql` (the PostgreSQL table script is HCL early-release material: ask HCL for
+  it), the HCL charts and images (use your own HCL Harbor account, hclcr.io), and keys and certificates (they are
+  generated when the environment is prepared).
+
+**If you prefer not to edit the files by hand**, or you need other configuration options (OpenShift, Active Directory,
+Oracle, your own image registry, a secrets manager, Keycloak, AWS...), use the
+**[HCL DX Compose Installer](https://github.com/europesip/hcl-dx-compose-installer)**: it asks for your values and
+generates the same set of files, already filled in for your environment.
+
+## What is here
+
+| Folder | Content |
+|---|---|
+| `lab-base/` | Namespaces, the base DX values (`custom-values.yaml`), the Ingress and the DX secrets |
+| `lab-ldap/` | OpenLDAP values, the demo users (`demo-users.ldif`), the bind secret, the **basic** LDAP layer (`custom-values.ldap-basic.yaml`) and the **complete** one with configuration overrides (`custom-values.ldap.yaml`: sign in by e-mail, preferred language, LDAPS with the corporate CAs), the XMLAccess request for the admin role and an **example** for a corporate Active Directory (`example-active-directory.yaml`, not applied) |
+| `lab-bbdd/` | The PostgreSQL cluster (CloudNativePG, SSL only), its secrets and the Web Engine database properties (`dx_dbdomain.properties`, JDBC over SSL with `sslmode=verify-full`) |
+| `lab-iq/` | LiteLLM and HCL DX IQ values |
+| `lab-search/` | HCL DX Search (OpenSearch) values |
+| `internals-ca/` | Explains the corporate CAs (directory and databases) that DX must trust. The certificates themselves are created when the environment is prepared |
+| `prep-pki/` | The `openssl` extension files used to sign the server certificates during the preparation |
+| `prepare.sh`, `demo.sh`, `RUNBOOK.md` | How we prepared the environment before the session and ran its steps |
+| `media/` | The presentation (PDF), the transcript of the video and the link to the video |
+| [`issues.md`](issues.md) | Issues found with DX Compose CF239 while preparing this showroom (SSL to the database, LDAPS, LDAP sign-in), and how they are handled |
+
+## Related repositories
+
+- [HCL DX Compose Installer](https://github.com/europesip/hcl-dx-compose-installer): generates these files, and a full
+  proof of concept, for your own environment. It keeps evolving.
+- [HCL DX Compose labs](https://github.com/europesip/hcl-dx-compose-labs): step-by-step labs with their guides.

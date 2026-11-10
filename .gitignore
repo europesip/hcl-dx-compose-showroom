@@ -1,0 +1,13 @@
+# Local configuration with credentials and generated material: never in this repository
+*.env
+env.sh
+charts/
+*.tgz
+*.pem
+*.key
+*.crt
+*.csr
+*.srl
+*.p12
+*.jks
+setup-postgres-dx.sql
