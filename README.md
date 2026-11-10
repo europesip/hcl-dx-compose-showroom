@@ -1,5 +1,16 @@
 # HCL DX Compose showroom · the files of the "Deploy HCL DX Compose in Minutes" webinar
 
+> [!IMPORTANT]
+> **Disclaimer.** This material is provided **as a learning aid only**. It does **not** replace, and is not intended
+> to replace in any way, the official HCL documentation, which remains the reference for installing, configuring and
+> supporting HCL DX Compose: <https://help.hcl-software.com/digital-experience/dx-compose/CF239/>.
+>
+> Everything in this repository is provided **AS IS**, without warranty of any kind, express or implied (see
+> [LICENSE](LICENSE)). The diagnostic tools in [`support/`](support/), and every script, runbook and file here
+> (`prepare.sh`, `demo.sh`, `uninstall.sh`, `RUNBOOK.md`, the values files...), must be used **only as a practical
+> learning reference**, never as a substitute for the official HCL material, documentation or support procedures.
+> It describes a basic example installation for a demonstration, not a production deployment.
+
 These are the files used in the **"Deploy HCL DX Compose in Minutes" webinar of 12 November 2026**: every values file,
 secret layout and command that appears on screen.
 
