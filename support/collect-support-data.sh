@@ -147,7 +147,7 @@ if $K -n "$DX_NS" get pod "$WE" >/dev/null 2>&1; then
   fi
 fi
 
-# --- The installation and the workstation (HCL DX Compose Installer) ---------------------------
+# --- The installation and the workstation (DX Installer Wizard) ---------------------------
 HERE="$(cd "$(dirname "$0")" && pwd)"
 [ -f "$HERE/../BUILD-INFO.txt" ] && cp "$HERE/../BUILD-INFO.txt" "$OUT/BUILD-INFO.txt"
 if [ -x "$HERE/environment-info.sh" ]; then

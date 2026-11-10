@@ -1,4 +1,4 @@
-# BUILD-INFO.txt · what this folder was generated for, by the HCL DX Compose Installer.
+# BUILD-INFO.txt · what this folder was generated for, by the DX Installer Wizard.
 # It contains no passwords, keys or tokens. If something fails, send this file (./install.sh --collect includes it).
 
 installer.version : 2.7.0-dev

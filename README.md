@@ -14,14 +14,14 @@
 These are the files used in the **"Deploy HCL DX Compose in Minutes" webinar of 12 November 2026**: every values file,
 secret layout and command that appears on screen.
 
-They were **generated automatically by the [HCL DX Compose Installer](https://github.com/europesip/hcl-dx-compose-installer)**
-(webinar preset), the same tool that generates the material of a full proof of concept.
+They were **generated automatically by the [DX Installer Wizard](https://github.com/europesip/hcl-dx-compose-installer)**, an
+open-source tool by EuropeSIP for HCL DX Compose (not an HCL product), with its webinar preset, the same tool that generates the material of a full proof of concept.
 
 **If you want to run this showroom on your own environment, everything is here**: the files, already prepared, the
 presentation and the video of the session.
 
 > **Frozen repository.** From 13 November 2026 this repository is frozen: it keeps the showroom exactly as it was
-> presented and receives no more changes. The [HCL DX Compose Installer](https://github.com/europesip/hcl-dx-compose-installer)
+> presented and receives no more changes. The [DX Installer Wizard](https://github.com/europesip/hcl-dx-compose-installer)
 > keeps evolving: use it for newer versions and other configurations.
 
 ## The presentation and the video of the session
@@ -49,7 +49,7 @@ If you want to reuse them, **adapt them to your installation**:
 
 **If you prefer not to edit the files by hand**, or you need other configuration options (OpenShift, Active Directory,
 Oracle, your own image registry, a secrets manager, Keycloak, AWS...), use the
-**[HCL DX Compose Installer](https://github.com/europesip/hcl-dx-compose-installer)**: it asks for your values and
+**[DX Installer Wizard](https://github.com/europesip/hcl-dx-compose-installer)**: it asks for your values and
 generates the same set of files, already filled in for your environment.
 
 ## What is here
@@ -69,6 +69,6 @@ generates the same set of files, already filled in for your environment.
 
 ## Related repositories
 
-- [HCL DX Compose Installer](https://github.com/europesip/hcl-dx-compose-installer): generates these files, and a full
+- [DX Installer Wizard](https://github.com/europesip/hcl-dx-compose-installer): generates these files, and a full
   proof of concept, for your own environment. It keeps evolving.
 - [HCL DX Compose labs](https://github.com/europesip/hcl-dx-compose-labs): step-by-step labs with their guides.
