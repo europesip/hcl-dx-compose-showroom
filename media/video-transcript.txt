@@ -4,271 +4,274 @@ Deploy HCL DX Compose in Minutes · webinar of 12 November 2026 · video transcr
 Welcome. In this session we are going to deploy HCL DX Compose on Kubernetes, live, in a real cluster, and we will build it step by step, the way you would build a production installation.
 
 [00:15]
-This is a hands on session with EUROPESIP, an HCL business partner. The goal is simple: take the guesswork out of deploying DX Compose. And remember: if you already hold DX licenses, you can try DX Compose today, at no extra licensing cost. What we build is a fully functional DX Compose, with the Nex Haven demo site. For production, we simply recommend tuning it to your expected load.
+This is a hands on session with EUROPESIP, an HCL business partner. The goal is simple: take the guesswork out of deploying DX Compose. And remember: if you already hold DX licenses, you can try DX Compose today, at no extra licensing cost. What we build is a fully functional DX Compose, with the Nex Haven demo site, its menus and its content. For production, we simply recommend tuning it to your expected load.
 
-[00:41]
+[00:44]
 Meet Harry Pappus, the DX administrator of Nex Haven. Harry will deploy DX Compose in small iterations, each one adding a real capability on top of the previous one. First, a basic deployment with the embedded Derby database. Then the users from LDAP. Then an external database, the AI assistant, IQ, and finally search.
 
-[01:04]
+[01:07]
 Let's look at our starting point. For this demo, we already have a Kubernetes environment built: a k3s cluster, CNCF certified, with three control plane nodes and three workers, managed with Rancher. On the workstation we only need kubectl and Helm. The DNS wildcard of our provider already points to the cluster, through ingress NGINX. And the storage team gave us two storage classes: one ReadWriteOnce, and one ReadWriteMany, which DAM needs for its binaries. As for resources, a base DX needs about five CPUs and eleven gigabytes free, and each iteration adds a little more.
 
-[01:44]
+[01:47]
 There are also three external dependencies, and none of them is HCL software. They could live in the same namespace as DX, but we chose to install them in their own namespace, dx shared, to tell them apart and keep better control of their resources. OpenLDAP with the demo users and groups, and PostgreSQL 18, managed by the CloudNativePG operator. Both were installed before the session with a preparation script, which is automated and takes a few minutes. The dx core database was prepared with the table script from HCL. The third one, LiteLLM, the proxy between IQ and the AI models, we install live in Lab four, right before IQ, because IQ is the only one that uses it.
 
-[02:30]
-This is the plan: one DX installation, in the dx demo namespace, built in six labs. Lab zero checks the preparation and creates the dx demo namespace. Lab one starts with the secrets, encrypted with SOPS, downloads the HCL charts, and installs the base DX on Derby. Lab two connects LDAP. Lab three moves the data to PostgreSQL. Lab four installs LiteLLM and the AI assistant, and Lab five, search. The files of every lab are in the showroom repository, so you can see each command we run and the values it needs.
+[02:33]
+This is the plan: one DX installation, in the dx demo namespace, built in six labs. Lab zero checks the preparation, creates the dx demo namespace, and pulls the HCL charts. Lab one starts with the secrets, encrypted with SOPS, and installs the base DX on Derby. Lab two connects LDAP. Lab three moves the data to PostgreSQL. Lab four installs LiteLLM and the AI assistant, and Lab five, search. The files of every lab are in the showroom repository, so you can see each command we run and the values it needs.
 
-[03:09]
+[03:12]
 Before the labs, a look at what companies ask for today. First, modern tools: we use the most recent versions, like Helm 4, already stable, instead of Helm 3. You will notice small differences in the flags, like wait equals legacy, and the commands also work with Helm 3. Second, security, as large companies require it. Connecting to an LDAP or a database without SSL is fine in a test or development environment. In production, we need secure connections and encrypted data: LDAPS, databases only over SSL, and certificates signed by corporate CAs. And third, a Kubernetes-native solution. DX Compose is not just a container: it uses ConfigMaps, Secrets, sidecars, advanced monitoring with Prometheus, and it is compatible with PostgreSQL, the usual database in Kubernetes. The HCL documentation uses imperative commands, like kubectl create secret; in this demo you will see kubectl apply, with YAML files: the objects are the same, the result is the same, and both ways are equally supported. We prefer YAML because large companies work with GitOps in mind: the desired state lives in Git, and it is applied to the cluster from there. The solution must be ready for secrets managers, like HashiCorp Vault or OpenBao, and keep everything private: nothing readable in Git, with secrets encrypted by Sealed Secrets or SOPS. In the labs, we use SOPS as an example, at the start of Lab one. Let's start.
 
-[04:49]
-Lab zero. First, we check what the preparation left ready in dx shared: OpenLDAP and PostgreSQL. Then, live, we create the namespace of DX, dx demo. These are the commands: the namespace, in its generic version or in the OpenShift one. The HCL charts come in Lab one, right after we see how the Harbor credentials are kept encrypted. LiteLLM is not in this lab: only IQ uses it, so we install it at the start of Lab four.
+[04:52]
+Lab zero. First, we check what the preparation left ready in dx shared: OpenLDAP and PostgreSQL. Then, live, we create the namespace of DX, dx demo. These are the commands: the namespace, in its generic version or in the OpenShift one, and then we sign in to the HCL Harbor and pull the three charts: DX, IQ and search. LiteLLM is not in this lab: only IQ uses it, so we install it at the start of Lab four.
 
-[05:20]
+[05:23]
 Before each lab, a quick look at where it is documented. HCL asks us to always follow the official documentation, and so should you. For Lab zero, the preparation page of DX Compose lists the prerequisites of the cluster, and how to prepare the namespace, also on OpenShift.
 
-[05:39]
-First, we check the environment. Our six nodes are ready. The two storage classes exist. In dx shared, OpenLDAP and PostgreSQL are running, and the PostgreSQL cluster reports a healthy state. And the namespace of DX, dx demo, does not exist yet: we create it now.
+[05:42]
+First, we check the environment. Our six nodes are ready. Then the resources: kubectl top nodes shows the CPU and memory in use on each node. Our three workers have fourteen CPUs and about twenty gigabytes each, with plenty of room left: far more than the five CPUs and eleven gigabytes a base DX needs. The control plane nodes are small, and DX does not run on them. For the details of what is reserved on a node, kubectl describe node shows them. The two storage classes exist. In dx shared, OpenLDAP and PostgreSQL are running, and the PostgreSQL cluster reports a healthy state. And the namespace of DX, dx demo, does not exist yet: we create it now.
 
-[06:00]
+[06:27]
 Now, the namespace of DX. This is the generic version, for any Kubernetes: just its name, and a label. And this is the OpenShift version. HCL requires these three annotations, so that the restricted v2 security context constraint gives the DX pods the user and group IDs they run with. Our cluster is not OpenShift, so we apply the generic one.
 
-[06:29]
-Lab zero is done. A quick recap: the preparation checked in dx shared, and the namespace of DX created, in its generic version.
+[06:56]
+Then, the HCL charts. We sign in to the HCL Harbor, hclcr dot io, with our Harbor user. Without a password on the command line, Helm asks for it: the CLI secret, which is typed but never shown on screen. Then helm pull downloads the three charts we need: DX Compose 2.50.0, IQ 1.0.3, and search 2.37.0. The container images are not downloaded here: the cluster pulls them later, with the pull secret we create in Lab one.
 
-[06:38]
-Lab one, the base DX, and the only mandatory one. First the secrets, encrypted with SOPS: the pull secret for the HCL Harbor, which also signs us in to download the HCL charts, and the wpsadmin credentials. Then a TLS certificate for HAProxy. Then one Helm command, with the chart hcl dx deployment 2.50.0, which is CF239, and our custom values. And an Ingress to publish it. The key values: only the Web Engine, which is DX Compose, the host name, and the two storage classes.
+[07:33]
+Lab zero is done. A quick recap: the preparation checked in dx shared, the namespace of DX created, in its generic version, and the three HCL charts downloaded from the HCL Harbor.
 
-[07:16]
+[07:46]
+Lab one, the base DX, and the only mandatory one. First the secrets, encrypted with SOPS: the pull secret for the HCL Harbor, and the wpsadmin credentials. Then a TLS certificate for HAProxy. Then one Helm command, with the chart hcl dx deployment 2.50.0, which is CF239, and our custom values. And an Ingress to publish it. The key values: only the Web Engine, which is DX Compose, the host name, and the two storage classes.
+
+[08:20]
 The official reference for Lab one is the installation page of DX Compose, in the HCL documentation: the chart, the custom values and the Helm commands we are going to run.
 
-[07:28]
+[08:33]
 Here are the secrets of the base, now in two files. Lab base slash secret harbor dot yaml holds regcred, the pull secret for hclcr dot io, with our personal Harbor user and its CLI secret. But look at the value: it is encrypted, with SOPS. SOPS encrypts only the values, so the name, the namespace and the type stay readable, and the file can live in git safely. At the end, the sops block: the file was encrypted for one age public key, and only who has the matching private key can decrypt it. The second file, lab base slash secrets dot yaml, with the wpsadmin user and its password, is encrypted the same way. The chart reads this secret instead of plain text values.
 
-[08:19]
-Let's see SOPS at work, with one of the files we want to keep hidden: the Harbor secret. sops decrypts it on the fly, and kubectl applies it. The clear value never touches the disk. The same encrypted file also gives Helm our Harbor password: sops extracts it, jq picks the password, and Helm reads it from its standard input, so it never appears on the command line. We sign in to the HCL Harbor, hclcr dot io, and helm pull downloads the three charts: DX Compose 2.50.0, IQ 1.0.3, and search 2.37.0. The container images are pulled later by the cluster, with the pull secret we just created. The wpsadmin secret, another way: sops decrypts the file in place, and we apply it. It stays decrypted for the rest of the labs, to keep them simple. Just never push it back to git like this. Then a self signed certificate for the host name, with openssl, stored as a TLS secret for HAProxy. Ideally, a cert-manager integrated with the secrets manager would create these keys and rotate them automatically. To keep the video simple, we use the usual tools, and we assume that every file goes through SOPS before it is pushed to git.
+[09:24]
+Let's see SOPS at work, with one of the files we want to keep hidden: the Harbor secret. sops decrypts it on the fly, and kubectl applies it. The clear value never touches the disk. The wpsadmin secret, another way: sops decrypts the file in place, and we apply it. It stays decrypted for the rest of the labs, to keep them simple. Just never push it back to git like this. Then a self signed certificate for the host name, with openssl, stored as a TLS secret for HAProxy. Ideally, a cert-manager integrated with the secrets manager would create these keys and rotate them automatically. To keep the video simple, we use the usual tools, and we assume that every file goes through SOPS before it is pushed to git.
 
-[09:38]
+[10:13]
 Now the most important file: lab base slash custom values dot yaml, the values for the chart. Images come from hclcr dot io, with the regcred pull secret. The volumes use our two storage classes: ReadWriteMany for the DAM binaries, which every DAM pod shares, and ReadWriteOnce for the Persistence Node, the License Manager and the Web Engine. The Web Engine customization volume holds the server profile, and the Derby database, for now. Size these storage requests to your needs and to the disk you have available. The values we show are a good reference to start with, but they depend on your requirements and possibilities. What you must always keep is a minimum for the Web Engine customization volume, five gigabytes here, so that the transfer from Derby is done safely: without enough space, the transfer fails.
 
-[10:35]
+[11:09]
 Then, what is deployed. core false and webEngine true: this is DX Compose, the Web Engine, not the classic Core. The DX OpenLDAP is disabled, because we will use our own one in Lab two, and the Persistence Node, the database of DAM, is enabled. In networking, the host name of the portal, and HAProxy as a ClusterIP service: we publish it with our own Ingress. HAProxy serves our TLS certificate. And security: wpsadmin comes from the web engine secret, so the plain text user and password stay empty. The chart refuses to install if you set both.
 
-[11:14]
+[11:49]
 Before we install, a note. You will notice a small difference from the helm command in the official HCL documentation, which runs helm install for the first installation, and helm upgrade for every later change. We use one single command for both: helm upgrade, with the install switch. If it is the first installation, it installs the release. If there is a previous installation, it applies the new values as an upgrade. This works the same in Helm 3. What Helm 4 changes is the wait flag: wait equals legacy, so that Helm waits for every pod, as Helm 3 did.
 
-[11:52]
+[12:27]
 Now, install DX Compose. One helm upgrade install, release dx deployment, chart 2.50.0, namespace dx demo, with our values file, and wait legacy, so Helm waits until every pod is ready. On a new cluster, the first install takes fifteen to twenty five minutes, mostly downloading images. In the small window, you can follow the pods as they start: the operator, HAProxy, the Persistence Node, DAM, the image processor, and the Web Engine, which takes the longest. We fast forward the wait. Helm reports the release as deployed.
 
-[12:30]
+[13:05]
 Before we publish DX with an Ingress, a good practice. Most of the problems people have with an installation are not in DX itself, but in the particularities of their network: the DNS, a firewall, the load balancer, or the ports of their own machine. So before creating the route, we check that DX answers. To do it, we use kubectl port forward. It opens a tunnel from a port of our workstation, here 8443, to a service inside the cluster, the HAProxy of DX, through the Kubernetes API itself. No Ingress, no DNS, and no open ports are needed. Now we call the portal on localhost, through the tunnel, and DX answers with a redirect to the portal page: it is up and running. If later the portal does not answer through the Ingress, we know the problem is in the route or in the network, not in DX. We close the tunnel.
 
-[13:28]
-Then, publish it. HAProxy is the only entry point of DX, so our Ingress terminates TLS with the same certificate, and re-encrypts towards HAProxy, on port 443. The annotations allow large DAM uploads and long IQ answers. If you install on a Kubernetes in the cloud, and use the LoadBalancer mode to integrate with the load balancer of your cloud, you may need to add some annotations of your provider here. In our case it is not needed, because this is a local Kubernetes. And if your cluster uses Traefik, the Ingress controller that k3s installs by default, the same design works with a Traefik IngressRoute instead of this Ingress. The rest of the installation does not change.
+[14:02]
+Then, publish it. HAProxy is the only entry point of DX, so our Ingress terminates TLS with the same certificate, and re-encrypts towards HAProxy, on port 443. The annotations allow large DAM uploads and long IQ answers. These values are the ones that work best on our local network, with our particular installation: they are not needed in every installation, it depends on your environment. If you install on a Kubernetes in the cloud, and use the LoadBalancer mode to integrate with the load balancer of your cloud, you may need to add some annotations of your provider here. In our case it is not needed, because this is a local Kubernetes. And if your cluster uses Traefik, the Ingress controller that k3s installs by default, the same design works with a Traefik IngressRoute instead of this Ingress. The rest of the installation does not change.
 
-[14:13]
+[14:57]
 We apply it, and check: every pod is running, and the portal answers over HTTPS. Lab one is installed. Let's open it.
 
-[14:24]
+[15:08]
 This is DX Compose, with the Nex Haven demo site, served through our Ingress. Let's log in as wpsadmin, the administrator of the basic registry, with the password from the web engine secret. And we are in: the site, with the authoring toolbar on top.
 
-[14:54]
-Lab one is done. A recap: the two secrets of the base, encrypted with SOPS, which also gave Helm the Harbor password for the charts, and a TLS certificate for HAProxy; one helm command with our values; a check through a port forward; and an Ingress that publishes DX. A working DX on Derby.
+[15:38]
+Lab one is done. A recap: the two secrets of the base, encrypted with SOPS, and a TLS certificate for HAProxy; one helm command with our values; a check through a port forward; and an Ingress that publishes DX. A working DX on Derby.
 
-[15:16]
+[15:55]
 Lab two: the users of DX come from LDAP. DX will authenticate against the OpenLDAP we installed before the session. The chart has a native LDAP block, so nothing is configured by hand in XML, and the bind credentials live in a Kubernetes secret. One helm upgrade, and the Web Engine restarts with the LDAP registry. The key values: type other, the host and port of the service, the base DN, and the name of the secret.
 
-[15:46]
+[16:25]
 For Lab two, the LDAP configuration page of DX Compose, with the native LDAP block of the chart and its bind secret.
 
-[15:57]
-The bind credentials are in lab ldap slash secrets dot yaml: the secret dx ldap bind, in dx demo, with the bind user, as a full DN, and its password, which we have hidden for you. The next step applies it, right before the upgrade.
+[16:36]
+The bind credentials are in lab ldap slash secrets dot yaml: the secret dx ldap bind, in dx demo, with the bind user, as a full DN, and its password, which we have hidden for you. If you plan to push it to Git, do not forget to encrypt it with SOPS, as we saw in Lab one. The next step applies it, right before the upgrade.
 
-[16:17]
+[17:00]
 And this is the LDAP layer, lab ldap slash custom values dot ldap basic dot yaml. Type other means an external LDAP. The host is the OpenLDAP service in dx shared, on port 389: plain LDAP, to keep this first step simple. Later in this lab we move to LDAPS. And the suffix is the base DN for the searches. customLdapSecret points to the bind secret. That is all the chart needs to connect DX to a directory.
 
-[16:50]
+[17:33]
 Next step: we apply the bind secret, and run the upgrade. Notice the pattern: every upgrade carries all the layers so far, the base values and now the LDAP values, one more dash f per lab, so the command always describes the whole installation. In Lab three we will talk about this pattern. Helm changes the Web Engine configuration, so the Web Engine restarts. In the window you can see the pod terminating, and starting again. We fast forward. Deployed: revision two.
 
-[17:29]
+[18:12]
 Now, the LDAP group dxadmins should administer the portal. We can do this from the command line, or directly from the administration menu of the UI, in the Resource Permissions page. To keep our habit of doing as much as possible declaratively instead of imperatively, we do it from the command line, with XMLAccess, the configuration interface of DX. But if you feel more comfortable with the administration UI, you can do it there. This small request gives the Administrator role, on the virtual resource PORTAL, to the group dxadmins. We post it to slash wps slash config, as wpsadmin, and DX answers that the request was processed successfully. The same XML can also be deployed with DXClient, the command line tool of HCL, for example from a pipeline.
 
-[18:22]
+[19:05]
 Now, the proof. We log out, and log in as andres, a user that only exists in the LDAP directory, and a member of dxadmins. DX recognises him, and as a member of dxadmins, the administration menus are available. Let's open Administration. This is the administration area of DX, and from Security, andres can already give permissions to other users or groups.
 
-[18:52]
+[19:34]
 Andres signed in with his short name. But most companies sign in with the corporate e-mail. We log out, and macarena signs in with her e-mail. DX rejects her: her password is right, but the native LDAP block of the chart only searches by uid, and has no value to change it.
 
-[19:13]
+[19:56]
 Let's fix it. But first, a word of warning: what comes now is advanced configuration. For a proof of concept or a test environment, it is usually not needed. But it matters so much in real companies that we decided to include it, even if it makes the demo a little longer. DX Compose runs on Open Liberty. From our values, the chart generates the Liberty configuration, the XML of the server, and here is its LDAP registry, searching by uid. With configuration overrides, the configOverrideFiles block of the values, we add our own XML fragments. Liberty merges them with what the chart generates: a fragment with the same id extends that element. This is how we reach everything the chart does not expose as a value.
 
-[20:00]
+[20:43]
 This is the complete LDAP layer, lab ldap slash custom values dot ldap dot yaml. It replaces the basic one, and from now on every upgrade uses it. The first override extends the registry with id ldap: two login properties, uid and mail. Users can sign in with their short name, or with their e-mail. The second one declares the preferred language of each user, so DX reads it from the directory. When a user has it, it wins over the language of the browser. When the directory does not have it, DX uses the language of the browser. This is the method documented in CF239 for adding custom attributes.
 
-[20:43]
+[21:26]
 And SSL. Our corporate directory also serves LDAPS, on port 636, with a certificate signed by the corporate directory CA. Corporate IT left us their CAs in the folder internals ca: the root CA of the directory, and the root CA of the databases. The other CAs of the lab, like the one of OpenSearch, we will create ourselves.
 
-[21:08]
+[21:51]
 Back to the LDAP layer. The port and sslEnabled are native values of the chart. But Liberty must trust those CAs. If it does not, the SSL handshake fails, with PKIX path building failed, and nobody can sign in. customTruststoreSecrets uploads them to the truststore of Liberty, from one secret with both certificates. Remember this step: if later we use SSL in the connection to the database, and we will in Lab three, the database CA that we upload now is what validates the certificate of the database.
 
-[21:42]
+[22:25]
 Next: the secret with the two corporate CAs, dx corporate cas, from the folder internals ca. And the same upgrade, now with the complete LDAP layer. Overrides and certificates are read when the Web Engine starts, so it restarts. We fast forward. Deployed: revision three.
 
-[22:22]
+[23:04]
 Let's try again. Macarena, with her e-mail. Now DX finds her by mail, and she is in. And look: the browser is in English, but the portal menus are in Spanish, because her preferred language in the directory is Spanish. The toolbar, the edit mode, and this menu, all in Spanish. The demo content of the site stays in English, because it only exists in English.
 
-[22:50]
+[23:33]
 The overrides can also be seen from inside. Liberty, the server under DX Compose, has its own administration interface, the Admin Center, at slash adminCenter on the DX host. We sign in as wpsadmin. Explore shows the server, defaultServer, and its applications, more than a hundred, all of them running. From here you can monitor the server, and change server and application settings. But in DX Compose, keep the configuration in the Helm values and in overrides: changes made only inside the pod are lost when it restarts. Configure lists the configuration files: server dot xml, and below, the overrides, read only. Here is ours, ldap login email dot xml: the LDAP registry, with the two login properties, uid and mail.
 
-[23:44]
+[24:27]
 One more thing. DX now talks to the directory over SSL, so we can close the door to plain LDAP. A search on port 389 still works. Then, one change in the configuration of OpenLDAP requires TLS for every connection. And the same search on port 389 is now rejected: confidentiality required. Only LDAPS is accepted.
 
-[24:08]
+[24:51]
 And DX? Enrique signs in with his e-mail: DX keeps working, because it already uses LDAPS, trusting the corporate directory CA.
 
-[24:20]
+[25:03]
 Before we close Lab two, going further. Our OpenLDAP only needed two small overrides. In many companies the directory is a Microsoft Active Directory: in this example, which we do not apply, one configuration override defines the whole LDAP registry. Users sign in with sAMAccountName or with their e-mail, groups come from memberOf, searches are paged, and every operation has its timeout. The same technique, only bigger.
 
-[24:51]
+[25:34]
 Lab two is done. A recap: the bind secret and the basic LDAP layer connected DX to the directory. Then the complete layer, with configuration overrides, added sign in by e-mail and the preferred language, and, with the corporate CAs in the truststore, LDAPS. The plain LDAP port is closed, and the group dxadmins administers the portal.
 
-[25:16]
+[25:59]
 Lab three: the external database. Derby is fine to start, but a real installation keeps the data of the Web Engine in an external database. HCL has decided to support PostgreSQL, so you do not have to depend on databases like Oracle, Db2 or SQL Server, which of course are still fully supported. In CF239 this already works, and while the official support is being completed, this webinar gives you an early preview of it, with our PostgreSQL 18. Two secrets carry the database properties, and one helm upgrade with useExternalDatabase does the rest: when the Web Engine starts, it transfers all its data from Derby to PostgreSQL, once. The JDBC URL points to our PostgreSQL service, with the user dxuser and one schema per domain. At the end, we will count about 465 tables. And the connection to the database will be encrypted.
 
-[26:14]
+[26:57]
 For Lab three, the database transfer page of DX Compose: how the Web Engine moves its data from Derby to an external database, and the properties it needs.
 
-[26:25]
+[27:08]
 First, a look at the PostgreSQL we created in the preparation. Its server certificate is signed by the corporate database CA, one of the two in internals ca, and this pg_hba rule rejects any connection without SSL. So DX must connect over SSL.
 
-[26:46]
+[27:29]
 The properties are in the lab bbdd folder. The dbtype file only names the PostgreSQL JDBC driver, which DX Compose already ships. HCL is planning to remove the need for it, which will make the configuration simpler. The dbdomain file describes every database domain of the Web Engine. Before the domains, the header compares the two forms of the JDBC URL. The only difference is the end. Without SSL, sslmode disable: our PostgreSQL would reject it. With SSL, sslmode verify full: the connection is encrypted, and the driver checks that the certificate of the server is signed by a trusted CA and matches its host name. The trusted CAs are the ones we uploaded to Liberty in Lab two: here, the corporate database CA. That is why that step matters: without the CA, this connection fails. This is the release domain: type postgresql, the database dx core, its own schema, the JDBC URL, already in its SSL form, and the user dxuser, with its password, which we have hidden for you. And the roles that the HCL table script created. The same block repeats for customization, community, JCR, feedback and likeminds: one database, six schemas. Once more, remember that in Kubernetes you can load these passwords through a secrets manager, so they never travel by e mail: that is the recommended best practice.
 
-[28:20]
+[29:03]
 And the database layer for the chart, lab bbdd slash custom values dot postgres dot yaml. useExternalDatabase true: on the next start, the Web Engine transfers the Derby data to the external database, once, and records it, so later upgrades do not repeat it. The two secrets with the properties. And dropDatabaseTables false, because our target database is empty: set it to true only to redo a transfer, and back to false right after.
 
-[28:55]
+[29:38]
 Next step: we create the two secrets from the properties files, custom credentials webengine dbtype secret, and dbdomain secret. There they are.
 
-[29:09]
+[29:52]
 Before the transfer, a word on these layers. In this webinar we use a different values file for each lab, so the labs are easier to follow, since the files of every lab are available to you. But splitting the values in layers has a risk: if you forget one layer in an upgrade, that part goes back to the default values of the product. Here, without the LDAP layer, DX would lose its LDAP configuration. One way to avoid that risk is the reuse values flag of Helm, which keeps the values of the previous release. But the best practice, and our recommendation, is to keep everything together in one single values file, with all the values, and to always apply that one.
 
-[29:53]
+[30:36]
 Now, the transfer. The same helm upgrade, now with three layers: base, LDAP, and PostgreSQL. Helm updates the configuration, and the Web Engine restarts. In the window, the Web Engine pod terminates and starts again. This time, before the portal comes up, it will move all its data to PostgreSQL. We fast forward until the new pod is running.
 
-[30:25]
+[31:08]
 Let's look inside. This is the log of the Web Engine container, live. The transfer runs domain by domain: for each one, it creates the tables in its schema in PostgreSQL, and then copies the data from Derby. Lines go by quickly: thousands of rows.
 
-[30:43]
+[31:26]
 The full transfer takes about ten to fifteen minutes on this cluster. We fast forward, but we keep the log open, so you can follow its progress. It is a one off operation: it is recorded when it finishes, and later upgrades do not repeat it.
 
-[31:10]
+[31:53]
 A few minutes later, the transfer has finished, JCR included, where the web content lives. Now the Web Engine starts the portal on PostgreSQL, and synchronises its web content libraries. Ready: the probes pass, and Helm reports the upgrade as deployed.
 
-[31:43]
+[32:26]
 Next: let's count. In PostgreSQL, the six schemas of the Web Engine now hold about 465 tables. The portal no longer depends on Derby. And every connection of dxuser uses TLS: the data of DX travels encrypted.
 
-[32:00]
+[32:43]
 And the portal works as before, now on PostgreSQL. We log in again as andres, from the LDAP directory: the same site, the same content, the same permissions.
 
-[32:14]
+[32:57]
 Lab three is done. A recap: two secrets with the database properties, and one upgrade with useExternalDatabase. The data of the Web Engine moved from Derby to PostgreSQL, about 465 tables, over an encrypted connection validated by the corporate database CA. And with its data in an external database, the deployment can now be scaled, with the replica settings of the chart.
 
-[32:41]
-Lab four: the AI assistant, HCL DX IQ. It starts with its prerequisite, LiteLLM, the gateway through which IQ reaches the language model. It is not HCL software, and only IQ uses it, so this is where we install it. Then IQ itself, two components next to DX: the Integrator, which talks to the language model, and the MCP Server, which gives the model tools to work with DX content. One helm install for IQ, with our values, and one more DX upgrade, so that HAProxy routes the IQ chat. The key values: the LiteLLM service and its two models, the deployment key of the licence, the MCP tools for web content and DAM, and the name of the IQ service for DX.
+[33:24]
+Lab four: the AI assistant, HCL DX IQ. It starts with its prerequisite, LiteLLM, the gateway through which IQ reaches the language model. It is not HCL software, and only IQ uses it, so this is where we install it. Then IQ itself, two components next to DX: the Integrator, which talks to the language model, and the MCP Server, which gives the model tools to work with DX content. One helm install for IQ, with our values, and one more DX upgrade, so that HAProxy routes the IQ chat. The key values: the LiteLLM service and its two models, the static key, which makes the deployment key of the licence unnecessary, the MCP tools for web content and DAM, and the name of the IQ service for DX.
 
-[33:30]
+[34:13]
 For Lab four, two pages of the HCL documentation: how to deploy LiteLLM, the prerequisite of IQ, and the installation guide of HCL DX IQ, with the Integrator and the MCP Server.
 
-[33:46]
+[34:29]
 Before we create anything, a map of what this lab adds, and of the secrets it uses. This is the whole installation, with every connection and the secret behind it. A question in the IQ chat goes from the browser to HAProxy, and from there to the IQ Integrator. The Integrator calls LiteLLM with the virtualKey of the iq litellm api secret, and LiteLLM checks it against its master key, from the litellm env secret: both hold the same value. Then LiteLLM calls the provider, here OpenRouter and Claude, with the OpenRouter API key, from that same secret. To answer about the portal, the Integrator uses the tools of the MCP Server, over HTTPS, and the MCP Server calls the APIs of DX as the user who asks. The deployment key of the licence stays empty: with the static key, IQ does not need it. For speed and simplicity, that static key is the master key of LiteLLM. In production, create a virtual key just for IQ, limited to its two models; LiteLLM needs its database option for that. And the provider. For simplicity, flexibility and the number of models available, we chose OpenRouter, which works without problems because it serves the same Claude models that HCL validates. You could also go directly to Anthropic, or to AWS Bedrock, which is the option HCL documents and recommends for production.
 
-[35:16]
+[36:00]
 Next, LiteLLM, the prerequisite of IQ. Its secrets are in lab iq slash secrets dot yaml. The first one, litellm env, in dx shared, holds the OpenRouter API key and the master key of LiteLLM. The second one goes to dx demo: it is the key IQ will use to call LiteLLM. To keep the demo simple it holds the master key of LiteLLM; in production, create a virtual key in LiteLLM just for IQ. Of course, we have hidden every key in this video for you. And instead of a declarative file, you can also create these secrets from the command line, with kubectl create secret. These are the equivalent commands, with the same names and keys: both ways give the same result.
 
-[36:06]
+[36:49]
 And these are its values, in lab iq slash litellm values dot yaml. LiteLLM is the open source proxy from BerriAI: it is not HCL software, HCL treats it as a prerequisite of IQ. It reads the master key and the provider key from the secret we just saw. And this is the important part: the model list. IQ always asks for two logical models. iq general purpose answers the questions and uses the tools, and here it is routed to Claude Sonnet 4.6, through OpenRouter. Prompt caching marks the system prompt, so the tools and the prompt are cached, which cuts the cost of every request. iq summary summarises long conversations, with Claude Haiku. Changing the AI provider is changing these lines: IQ is not touched.
 
-[37:00]
+[37:43]
 Now we apply the secrets, and install LiteLLM with Helm, from the public chart of BerriAI, version 1.106.5, in the dx shared namespace, with our values file. Then we wait for the rollout. While it starts, the pod list shows its progress.
 
-[37:23]
+[38:06]
 The next step is optional, but it is a good test. First, the master key of LiteLLM: it is the PROXY MASTER KEY value that we stored in the litellm env secret, and we can read it back with kubectl get secret. On screen, we have hidden it for you. Then, through a port forward, we ask LiteLLM, with that master key, for the model iq general purpose, and the answer comes from Claude, through OpenRouter. With this we prove that the models IQ is going to use really work. Now, IQ itself.
 
-[37:58]
+[38:41]
 These are the values of IQ, in lab iq slash custom iq values dot yaml. First, how to reach DX: the release name, and the external host, which the model also uses to build the links in its answers. The MCP Server: over HTTPS with our certificate, and with the tools for web content, enable WCM, and for DAM, enable DAM, both set to true. LiteLLM: the service we installed at the start of this lab. And the deployment key of the IQ licence. Here it stays empty, and everything works: it is only needed when IQ does not have a static key for LiteLLM, and uses the licence flow instead. With the static key of the iq litellm api secret, as in this demo, leave it empty. If you ever need it, remember that this chart reads it only from its values, not from a secret: encrypt it with SOPS, or pass it on the helm command with dash dash set. With the sessions in memory, the Integrator runs as a single replica. For several replicas, IQ keeps its sessions in PostgreSQL.
 
-[39:10]
+[39:54]
 Next step: the IQ chart, version 1.0.3, with our values. Then we wait for the MCP Server, and restart the Integrator, because it reads the list of MCP tools when it starts. Both are running.
 
-[39:28]
+[40:11]
 And the DX layer for IQ is just one line: networking dot dxIqService, the name of the Integrator service. With it, HAProxy routes the IQ API and the chat interface to the Integrator, and the IQ button appears in the DX toolbar.
 
-[39:46]
+[40:29]
 Now, the DX upgrade, with four layers this time. The Web Engine restarts once more. We fast forward. Deployed. Let's try IQ in the portal.
 
-[40:18]
+[41:01]
 Now let's check that IQ is deployed and works. This is Practitioner Studio, the workspace of DX authors and administrators, and on the toolbar, the new IQ chat. Let's open it. First question: which web content libraries are there? IQ calls the web content tool of its MCP Server, with the permissions of the user who asks, and answers with the real libraries of this portal, transferred to PostgreSQL in Lab three.
 
-[40:47]
+[41:30]
 A second question, in a new conversation, so that the previous one is cleared: how do I create a new page? IQ explains the steps in DX, in plain language, right where the author is working.
 
-[41:15]
+[41:59]
 Lab four is done. A recap: LiteLLM as the gateway to the language model, IQ with its Integrator and its MCP Server, and one more DX upgrade. An AI assistant inside DX, with the language model of your choice behind LiteLLM.
 
-[41:34]
+[42:17]
 Lab five, the last one: search. Search V2 is OpenSearch, plus the Search Middleware and the File Processor, from the chart hcl dx search 2.37.0. OpenSearch uses mutual TLS, so we first create a small certificate authority and three certificates, admin, node and client, one command each, and one secret per certificate. Then the search chart, and one last DX upgrade. The subject of the admin certificate must match the adminDN value, and three crawlers index web content, the JCR and the portal, every fifteen minutes, and DAM indexes its own assets, live.
 
-[42:17]
+[43:01]
 And for Lab five, enabling search in DX Compose: OpenSearch, its certificates, and the automated setup of the crawlers.
 
-[42:29]
+[43:12]
 The next steps create the certificates, one step each. As in Lab one, in production cert-manager would issue them; here we use openssl. First, a small certificate authority for the lab. Then the admin certificate: a key and a request, signed by our authority. Its subject, CN admin, is the adminDN of the values. The same for the node certificate, used by the OpenSearch nodes, and for the client certificate, used by the Search Middleware. Finally, one secret per certificate in dx demo, with the certificate, its key, and the CA.
 
-[43:07]
+[43:51]
 Now we run these commands, in lab search slash certs: the authority, then, for each certificate, its key and its request, the signature of our authority, and its secret. Here are the files, and the subject of the admin certificate, which is the adminDN of the values. And the three secrets in dx demo.
 
-[43:31]
+[44:14]
 The values of the search chart, lab search slash custom search values dot yaml. The OpenSearch data goes to our ReadWriteOnce storage class. We deploy OpenSearch, the Search Middleware, and the File Processor, which extracts the text of DAM documents, like PDF or Office files. Important: fileProcessor must be set to true. In the default values of the chart it comes as false, and with it set to false there is currently a dependency that keeps search from being enabled correctly. The adminDN must be exactly the subject of our admin certificate. And the automated setup: it creates the content sources and the crawlers for our DX release. It knows five kinds of sources: DAM, web content, the JCR, the portal pages, and people, from the People Service. We enable the first four; people stays off, because this lab does not install the People Service. Web content, the JCR and the portal get a crawler; DAM needs none, because it indexes its own assets. Just as important: haproxyProtocol must be set to https. The crawlers take the connection to DX from this value, and our HAProxy only listens over HTTPS, so with the default value the crawlers fail. Keep it in mind in an installation like this one.
 
-[44:54]
+[45:38]
 Next step: we install hcl dx search, release dx search, with its values, and Helm waits until OpenSearch and the middleware are ready. We fast forward. Deployed.
 
-[45:19]
+[46:02]
 And the DX layer for search: HAProxy routes the search API and its interface to the query service of the Search Middleware. Search Middleware enabled, the name of the search release, and DAM sends its assets to the index. And adminUI enables the new Search Admin UI, where the content sources and the crawlers are managed. It comes disabled in the defaults of the chart.
 
-[45:46]
+[46:29]
 Then, the last DX upgrade, now with all five layers. This command describes the whole installation: base, LDAP, PostgreSQL, IQ and search. The Web Engine restarts one last time. We fast forward. Deployed: the complete installation.
 
-[46:21]
+[47:04]
 Finally, the search API answers. And this is the final picture of dx demo: DX, IQ and search, every pod running.
 
-[46:33]
+[47:16]
 And now, the search. The crawlers already indexed web content, the JCR and the pages, and DAM indexed its own assets. From the toolbar of DX, we search for smart. Two hundred results, from every source, in the Search Center: product pages, news, web content items, each with its location in the library. Let's narrow it down: EcoLiving. One result: the news item about the partnership, straight from web content. Search V2, powered by OpenSearch.
 
-[47:08]
+[47:52]
 And for developers, the search API, with its own explorer, served by DX at slash dx slash api slash search slash v2.
 
-[47:20]
+[48:03]
 And this is new in CF239: the Search Admin UI, enabled by the adminUI value we saw. The overview shows the state of the crawlers: three of them, scheduled, and the last crawl finished successfully. In Content Sources and Crawlers, the content sources that the automated setup created for our release: DAM, JCR, the portal and web content, with the number of documents of each one. And their crawlers, with their status, which we can start or stop from here, without any command. And in Mappings and translations, the common fields of the index, title, description, link, type and tags, and the field each source maps to them.
 
-[48:06]
+[48:49]
 Lab five is done, and with it, the complete installation. A recap: the certificates for mutual TLS, the search chart, and one last DX upgrade. Search V2 indexes the web content, the portal and DAM, and it is managed from its own administration interface.
 
-[48:25]
+[49:08]
 Before the summary, a look back at the labs, with the run time of each one: the prerequisites, the base DX on Derby, the users from LDAP with sign in by e-mail and LDAPS, the external database over SSL, the AI assistant with LiteLLM and IQ, and search with OpenSearch. All of it, live, in under an hour.
 
-[48:49]
+[49:33]
 And that is it. In one session, we deployed HCL DX Compose, connected it to LDAP, moved its data to PostgreSQL, added the AI assistant, and enabled search, one iteration at a time, each one a real capability. On this cluster, the whole installation takes about fifty minutes, most of it waiting for the images and for the data transfer, and the base DX alone, fifteen to twenty five the first time. You can replay this video to review any step, and use the official HCL documentation for the details of each one. And if you need a hand, EUROPESIP can help with any HCL DX installation, from a first proof of concept to a tuned production platform. And three good practices to take home: pin the versions of charts and images; keep one values file per environment in Git, reviewed like code; and let cert-manager, integrated with your secrets manager, renew and rotate the certificates.
 
-[49:52]
+[50:35]
 Everything we showed today is available to you. The showroom repository has the files, the slides and the video of this webinar. And the DX Installer Wizard, an open source tool by EuropeSIP, generates those files, and a full proof of concept, for your own environment. One word of caution: this was a basic example installation. It is fully functional, but there are many more configuration and tuning options, and we always recommend professional services for sites with high load expectations.
 
-[50:24]
+[51:07]
 And to keep learning, HCL offers free resources for Digital Experience, at hclsw.co/dx-free-resources. You can also scan this QR code.
 
-[50:36]
+[51:19]
 Here you will find all kinds of resources: the HCLSoftware Marketplace, free resources, the documentation and the Help Center, and HCLSoftware U, the HCL university, with its training. If you stay on the home page for a few seconds, or press Get Started, a short guided tour shows each of them in detail.
 
-[51:06]
+[51:49]
 Thank you for watching. The showroom, the DX Installer Wizard and the free HCL resources are at these links. See you in the next session.
