@@ -171,31 +171,27 @@ cat lab-base/namespace-dx.openshift.yaml    # OpenShift
 kubectl apply -f lab-base/namespace-dx.yaml
 ```
 
-#### 0-3 · HCL Harbor (hclcr.io): sign in and pull the charts
-
-The Helm charts of DX, IQ and Search, with your Harbor user and CLI secret. The images are pulled by the cluster itself, with the regcred pull secret (stage 1).
-
-```bash
-helm registry login hclcr.io -u 'andres@europesip.com' -p '<REDACTED>'
-mkdir -p charts
-helm pull oci://hclcr.io/dx-compose/hcl-dx-deployment --version 2.50.0 -d charts
-helm pull oci://hclcr.io/dx/hcl-dx-iq --version 1.0.3 -d charts
-helm pull oci://hclcr.io/dx-compose/hcl-dx-search --version 2.37.0 -d charts
-```
-
 ### 1 · Base DX installation
 
 📖 HCL documentation: [DX Compose · Installation](https://help.hcl-software.com/digital-experience/dx-compose/CF239/deploy_dx/install/kubernetes_deployment/install/)
 
 #### 1-1 · Secrets
 
-Pull secret (lab-base/secret-harbor.yaml) and wpsadmin (lab-base/secrets.yaml) + a self-signed TLS certificate for HAProxy. There are two usual ways to create Kubernetes objects such as these secrets: imperative, with commands like kubectl create secret, and declarative, describing them in YAML files applied with kubectl apply. GitOps works with the declarative one, so it is the one this webinar follows (the TLS secret is built from the certificate files).
+Pull secret (lab-base/secret-harbor.yaml), the Helm charts (signing in to hclcr.io with the same encrypted file) and wpsadmin (lab-base/secrets.yaml) + a self-signed TLS certificate for HAProxy. There are two usual ways to create Kubernetes objects such as these secrets: imperative, with commands like kubectl create secret, and declarative, describing them in YAML files applied with kubectl apply. GitOps works with the declarative one, so it is the one this webinar follows (the TLS secret is built from the certificate files).
 
 ```bash
 # The two secrets of the base are in Git encrypted with SOPS: names readable, values ENC[AES256_GCM,...]
 cat lab-base/secret-harbor.yaml
 # Pull secret: decrypted on the fly and applied; the clear value never touches the disk
 sops -d lab-base/secret-harbor.yaml | kubectl apply -f -
+# The same encrypted file gives Helm the Harbor password, through stdin: then the charts of DX, IQ and Search
+sops -d --extract '["stringData"][".dockerconfigjson"]' lab-base/secret-harbor.yaml \
+  | jq -r '.auths["hclcr.io"].password' \
+  | helm registry login hclcr.io -u 'andres@europesip.com' --password-stdin
+mkdir -p charts
+helm pull oci://hclcr.io/dx-compose/hcl-dx-deployment --version 2.50.0 -d charts
+helm pull oci://hclcr.io/dx/hcl-dx-iq --version 1.0.3 -d charts
+helm pull oci://hclcr.io/dx-compose/hcl-dx-search --version 2.37.0 -d charts
 # wpsadmin: decrypted in place, so it stays in clear text for the rest of the labs, then applied
 sops -d -i lab-base/secrets.yaml
 kubectl apply -f lab-base/secrets.yaml
@@ -206,9 +202,9 @@ kubectl -n dx-demo create secret tls dx-tls-cert --cert=lab-base/dx-tls.crt --ke
 
 > 🔐 **SOPS in this step.** Both files are encrypted with [SOPS](https://github.com/getsops/sops) and an
 > [age](https://github.com/FiloSottile/age) key, as they would be in a Git repository: `.sops.yaml` says which files and
-> fields are encrypted, and for which public key. You need `sops`, `age` and the private key in
+> fields are encrypted, and for which public key. You need `sops`, `age`, `jq` and the private key in
 > `~/.config/sops/age/keys.txt`. Two ways to use them: `sops -d file | kubectl apply -f -` decrypts on the fly (the pull
-> secret), and `sops -d -i file` decrypts the file in place (wpsadmin), which then must **not** be pushed to Git again
+> secret, and `sops -d --extract` for the Harbor password that Helm reads from stdin), and `sops -d -i file` decrypts the file in place (wpsadmin), which then must **not** be pushed to Git again
 > (`sops -e -i file` encrypts it back). The rest of the labs use plain YAML files.
 
 #### 1-2 · Install DX Compose (15-25 min the first time)
@@ -362,10 +358,8 @@ kill $PF
 #### 4-3 · Install IQ (Integrator and MCP Server)
 
 ```bash
-IQ_DEPLOYMENT_KEY=$(kubectl -n dx-demo get secret iq-deployment-key -o jsonpath='{.data.deploymentKey}' | base64 -d)
 helm upgrade --install dx-iq charts/hcl-dx-iq-1.0.3.tgz -n dx-demo \
   -f lab-iq/custom-iq-values.yaml \
-  --set configuration.licensing.deploymentKey="$IQ_DEPLOYMENT_KEY" \
   --force-conflicts     # Helm 4: if run again, the MCP list belongs to kubectl patch
 kubectl -n dx-demo rollout status deployment/dx-iq-mcp-server --timeout=300s
 kubectl -n dx-demo rollout restart deployment/dx-iq-integrator     # it lists the MCP tools when it starts

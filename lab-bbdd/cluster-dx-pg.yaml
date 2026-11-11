@@ -18,7 +18,7 @@ spec:
     name: dx-pg-superuser
 
   postgresql:
-    # SSL only: any connection without encryption is rejected (DX, Keycloak and ÓRBITA connect over SSL)
+    # SSL only: any connection without encryption is rejected (DX connects over SSL)
     pg_hba:
       - hostnossl all all all reject
     parameters:

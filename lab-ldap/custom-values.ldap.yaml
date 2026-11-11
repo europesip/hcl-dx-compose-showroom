@@ -23,7 +23,7 @@ configuration:
 
     # preferredLanguage (language of each user, in demo-users.ldif): the DX Compose user registry
     # does not declare it, so DX would not read it from the LDAP. With this property the DX profile
-    # returns it (Script Applications such as ÓRBITA and Hello DX use it for their language).
+    # returns it, and DX shows the portal in that language.
     # DX Compose > Adding custom attributes (wplc-add-property).
     configOverrideFiles:
       # Sign in with the short name OR the e-mail: the native LDAP block of the chart only searches by uid and has no

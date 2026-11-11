@@ -42,7 +42,7 @@ done
 
 IDS=('0-1' '0-2' '0-3' '1-1' '1-2' '1-3' '1-4' '1-5' '2-1' '2-2' '2-3' '2-4' '3-1' '3-2' '3-3' '4-1' '4-2' '4-3' '4-4' '4-5' '5-1' '5-2' '5-3' '5-4' '5-5' '5-6' '5-7' '5-8')
 LABS=('0 · Prerequisites' '0 · Prerequisites' '0 · Prerequisites' '1 · Base DX installation' '1 · Base DX installation' '1 · Base DX installation' '1 · Base DX installation' '1 · Base DX installation' '2 · LDAP configuration' '2 · LDAP configuration' '2 · LDAP configuration' '2 · LDAP configuration' '3 · Transfer to an external database' '3 · Transfer to an external database' '3 · Transfer to an external database' '4 · AI Assistant' '4 · AI Assistant' '4 · AI Assistant' '4 · AI Assistant' '4 · AI Assistant' '5 · Search' '5 · Search' '5 · Search' '5 · Search' '5 · Search' '5 · Search' '5 · Search' '5 · Search')
-TITLES=('Check that the environment is ready' 'Namespace for DX: dx-demo' 'HCL Harbor (hclcr.io): sign in and pull the charts' 'Secrets' 'Install DX Compose (15-25 min the first time)' 'Check DX with kubectl port-forward (before the Ingress)' 'External access' 'Check the portal (optional)' 'Connect DX to the LDAP (~5 min)' 'Administrator role for the group dxadmins (XMLAccess)' 'Configuration overrides: sign in by e-mail, preferred language and LDAPS (~5 min)' 'Only LDAPS: close plain LDAP in OpenLDAP' 'Web Engine database properties' 'Transfer Derby → PostgreSQL (~14 min)' 'Count the transferred tables (optional, ~465)' 'LiteLLM' 'Ask Claude through LiteLLM (optional)' 'Install IQ (Integrator and MCP Server)' 'Enable IQ in DX (~5 min)' 'Ask IQ from the terminal (optional)' 'OpenSearch certificates: a CA for the lab' 'OpenSearch certificates: admin' 'OpenSearch certificates: node' 'OpenSearch certificates: client' 'One secret per certificate' 'Install hcl-dx-search (OpenSearch + Search Middleware)' 'Enable Search V2 in DX (~5 min)' 'Check the search API (optional)')
+TITLES=('Check that the environment is ready' 'Namespace for DX: dx-demo' 'HCL Harbor: moved to step 1-1 (SOPS)' 'Secrets' 'Install DX Compose (15-25 min the first time)' 'Check DX with kubectl port-forward (before the Ingress)' 'External access' 'Check the portal (optional)' 'Connect DX to the LDAP (~5 min)' 'Administrator role for the group dxadmins (XMLAccess)' 'Configuration overrides: sign in by e-mail, preferred language and LDAPS (~5 min)' 'Only LDAPS: close plain LDAP in OpenLDAP' 'Web Engine database properties' 'Transfer Derby → PostgreSQL (~14 min)' 'Count the transferred tables (optional, ~465)' 'LiteLLM' 'Ask Claude through LiteLLM (optional)' 'Install IQ (Integrator and MCP Server)' 'Enable IQ in DX (~5 min)' 'Ask IQ from the terminal (optional)' 'OpenSearch certificates: a CA for the lab' 'OpenSearch certificates: admin' 'OpenSearch certificates: node' 'OpenSearch certificates: client' 'One secret per certificate' 'Install hcl-dx-search (OpenSearch + Search Middleware)' 'Enable Search V2 in DX (~5 min)' 'Check the search API (optional)')
 OPT=(0 0 0 0 0 0 0 1 0 0 0 0 0 0 1 0 1 0 0 1 0 0 0 0 0 0 0 1)
 
 # 0-1 · Check that the environment is ready
@@ -62,17 +62,19 @@ kubectl apply -f lab-base/namespace-dx.yaml
 
 # 0-3 · HCL Harbor (hclcr.io): sign in and pull the charts
 step_2() {
-retry helm registry login hclcr.io -u 'andres@europesip.com' -p '<REDACTED>'
-mkdir -p charts
-retry helm pull oci://hclcr.io/dx-compose/hcl-dx-deployment --version 2.50.0 -d charts
-retry helm pull oci://hclcr.io/dx/hcl-dx-iq --version 1.0.3 -d charts
-retry helm pull oci://hclcr.io/dx-compose/hcl-dx-search --version 2.37.0 -d charts
+echo "The Harbor sign-in and the charts are in step 1-1, with the password from the SOPS-encrypted file"
 }
 
 # 1-1 · Secrets
 step_3() {
 cat lab-base/secret-harbor.yaml
 sops -d lab-base/secret-harbor.yaml | kubectl apply -f -
+hlogin() { sops -d --extract '["stringData"][".dockerconfigjson"]' lab-base/secret-harbor.yaml | jq -r '.auths["hclcr.io"].password' | helm registry login hclcr.io -u 'andres@europesip.com' --password-stdin; }
+retry hlogin
+mkdir -p charts
+retry helm pull oci://hclcr.io/dx-compose/hcl-dx-deployment --version 2.50.0 -d charts
+retry helm pull oci://hclcr.io/dx/hcl-dx-iq --version 1.0.3 -d charts
+retry helm pull oci://hclcr.io/dx-compose/hcl-dx-search --version 2.37.0 -d charts
 grep -q '^sops:' lab-base/secrets.yaml && sops -d -i lab-base/secrets.yaml   # decrypted once, then it stays in clear text
 kubectl apply -f lab-base/secrets.yaml
 [ -f lab-base/dx-tls.crt ] || openssl req -x509 -newkey rsa:2048 -nodes -sha256 -days 365 -keyout lab-base/dx-tls.key -out lab-base/dx-tls.crt \
@@ -181,10 +183,8 @@ kill $PF
 
 # 4-3 · Install IQ (Integrator and MCP Server)
 step_17() {
-IQ_DEPLOYMENT_KEY=$(kubectl -n dx-demo get secret iq-deployment-key -o jsonpath='{.data.deploymentKey}' | base64 -d)
 rhelm upgrade --install dx-iq charts/hcl-dx-iq-1.0.3.tgz -n dx-demo \
   -f lab-iq/custom-iq-values.yaml \
-  --set configuration.licensing.deploymentKey="$IQ_DEPLOYMENT_KEY" \
   --force-conflicts     # Helm 4: if run again, the MCP list belongs to kubectl patch
 kubectl -n dx-demo rollout status deployment/dx-iq-mcp-server --timeout=300s
 kubectl -n dx-demo rollout restart deployment/dx-iq-integrator     # it lists the MCP tools when it starts

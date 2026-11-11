@@ -39,8 +39,11 @@ configuration:
   litellm:
     liteLlmUrl: "http://litellm.dx-shared.svc.cluster.local:4000"
 
-  # licensing.deploymentKey is NOT here: the chart cannot read it from a secret yet (only from its values), so
-  # demo.sh reads it from the Secret iq-deployment-key (lab-iq/secrets.yaml) and passes it with --set.
+  # The deployment key of the IQ licence. hcl-dx-iq 1.0.3 cannot read it from a Secret yet, only from its values,
+  # so it is here. To keep it out of Git in clear text: encrypt this field with SOPS (as the secrets of lab-base),
+  # or leave it out of this file and pass it on the helm command with --set configuration.licensing.deploymentKey=...
+  licensing:
+    deploymentKey: ""   # empty: static key from iq-litellm-api-secret (no KMS)
 
 environment:
   pod:
