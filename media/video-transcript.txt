@@ -265,13 +265,16 @@ Before the summary, a look back at the labs, with the run time of each one: the 
 And that is it. In one session, we deployed HCL DX Compose, connected it to LDAP, moved its data to PostgreSQL, added the AI assistant, and enabled search, one iteration at a time, each one a real capability. On this cluster, the whole installation takes about fifty minutes, most of it waiting for the images and for the data transfer, and the base DX alone, fifteen to twenty five the first time. You can replay this video to review any step, and use the official HCL documentation for the details of each one. And if you need a hand, EUROPESIP can help with any HCL DX installation, from a first proof of concept to a tuned production platform. And three good practices to take home: pin the versions of charts and images; keep one values file per environment in Git, reviewed like code; and let cert-manager, integrated with your secrets manager, renew and rotate the certificates.
 
 [50:35]
-Everything we showed today is available to you. The showroom repository has the files, the slides and the video of this webinar. And the DX Installer Wizard, an open source tool by EuropeSIP, generates those files, and a full proof of concept, for your own environment. One word of caution: this was a basic example installation. It is fully functional, but there are many more configuration and tuning options, and we always recommend professional services for sites with high load expectations.
+Everything we showed today is available to you. The showroom repository has the files, the slides and the video of this webinar. And when you are ready to take DX Compose to production, talk to us at EuropeSIP. Scan these codes to visit our website, or to reach an expert through our contact form. Or simply write to info at europesip dot com. One word of caution: this was a basic example installation. It is fully functional, but there are many more configuration and tuning options, and we always recommend professional services for sites with high load expectations.
 
-[51:07]
+[51:13]
 And to keep learning, HCL offers free resources for Digital Experience, at hclsw.co/dx-free-resources. You can also scan this QR code.
 
-[51:19]
+[51:25]
 Here you will find all kinds of resources: the HCLSoftware Marketplace, free resources, the documentation and the Help Center, and HCLSoftware U, the HCL university, with its training. If you stay on the home page for a few seconds, or press Get Started, a short guided tour shows each of them in detail.
 
-[51:49]
-Thank you for watching. The showroom, the DX Installer Wizard and the free HCL resources are at these links. See you in the next session.
+[51:55]
+Before we say goodbye, two upcoming HCL webinars. On December tenth, Kyle Farnand, Director of Product Management, on the future of digital experiences in the age of AI: where HCL DX is heading, built on your current apps. And on December seventeenth, Ken Krause, Global Director of HCL eXperience, on the business case for total experience, with HCL Mosaic. Both at eleven AM Eastern time.
+
+[52:23]
+Thank you for watching. The showroom, our website and our e-mail, and the free HCL resources are at these links. See you in the next session.

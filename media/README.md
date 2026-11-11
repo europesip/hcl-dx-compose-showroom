@@ -3,7 +3,7 @@
 The "Deploy HCL DX Compose in Minutes" webinar of 12 November 2026:
 
 - **Presentation:** [`Deploy-HCL-DX-Compose-in-Minutes-slides.pdf`](Deploy-HCL-DX-Compose-in-Minutes-slides.pdf)
-- **Full video** (MP4, about 52 minutes, English narration):
+- **Full video** (MP4, about 53 minutes, English narration):
   [Deploy-HCL-DX-Compose-in-Minutes-webinar-video.mp4](https://github.com/europesip/hcl-dx-compose-showroom/releases/download/webinar-2026-11-12/Deploy-HCL-DX-Compose-in-Minutes-webinar-video.mp4)
   and its subtitles
   [Deploy-HCL-DX-Compose-in-Minutes-webinar-video.srt](https://github.com/europesip/hcl-dx-compose-showroom/releases/download/webinar-2026-11-12/Deploy-HCL-DX-Compose-in-Minutes-webinar-video.srt).
